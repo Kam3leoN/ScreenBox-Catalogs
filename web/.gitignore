@@ -1,2 +1,4 @@
 .vercel
 .env*
+# Régénéré au build depuis ../screenbox-catalogs.db
+public/data/

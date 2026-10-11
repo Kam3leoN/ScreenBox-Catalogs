@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "export:data": "node scripts/export-static-data.mjs",
+    "predev": "npm run export:data",
     "dev": "vite",
+    "prebuild": "npm run export:data",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "sync:k3ui": "node scripts/sync-k3ui.mjs"
@@ -15,6 +18,7 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "@vercel/node": "^5.3.0",
+    "sql.js": "^1.14.2",
     "typescript": "^5.7.3",
     "vite": "^6.0.7"
   }

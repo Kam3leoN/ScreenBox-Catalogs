@@ -35,17 +35,25 @@
         </p>
       </section>
 
+      <p id="catalogSummary" class="body-medium" style="opacity: 0.85; margin-bottom: 1rem">Chargement du catalogue…</p>
+
       <div class="field" style="margin-bottom: 1rem">
         <label class="field-label" for="q">Recherche</label>
-        <input id="q" class="field-input" type="search" placeholder="Nom, CRC, MD5, SHA1…" />
+        <input id="q" class="field-input" type="search" placeholder="Filtrer systèmes / jeux…" />
       </div>
 
       <div class="card" style="padding: 1rem; margin-bottom: 1rem">
         <h2 class="title-medium">Systèmes</h2>
         <ul id="systems" class="list"></ul>
-        <p id="systemsEmpty" class="body-medium" style="opacity: 0.7">
-          Connectez Turso (<code>TURSO_DATABASE_URL</code>) ou servez le snapshot local via l’API.
+        <p id="systemsEmpty" class="body-medium" style="opacity: 0.7" hidden>
+          Aucun système — lancez <code>npm run export:data</code> puis rebuild.
         </p>
+      </div>
+
+      <div id="gamesPanel" class="card" style="padding: 1rem; margin-bottom: 1rem" hidden>
+        <h2 id="gamesTitle" class="title-medium">Jeux</h2>
+        <ul id="games" class="list"></ul>
+        <p id="gamesEmpty" class="body-medium" style="opacity: 0.7" hidden>Aucun jeu.</p>
       </div>
 
       <div class="card" style="padding: 1rem">
