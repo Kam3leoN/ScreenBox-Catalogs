@@ -144,6 +144,13 @@ if (sourceMode === "turso") {
   sourceLabel = "turso";
 } else {
   if (!fs.existsSync(dbPath)) {
+    const existing = path.join(outDir, "systems.json");
+    if (fs.existsSync(existing)) {
+      console.warn(
+        `[export-static-data] DB absente (${dbPath}) — conservation de ${existing}`,
+      );
+      process.exit(0);
+    }
     console.error(`[export-static-data] DB introuvable : ${dbPath}`);
     process.exit(1);
   }

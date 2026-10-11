@@ -2,5 +2,7 @@
 .env
 .env.*
 !.env.example
-# Régénéré au build depuis ../screenbox-catalogs.db
-public/data/
+# Détail par système (trop volumineux) — régénéré en local via export:data
+public/data/by-system/
+# systems.json est versionné (index catalogue, y compris TOSEC)
+!public/data/systems.json
