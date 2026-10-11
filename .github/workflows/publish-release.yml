@@ -1,0 +1,56 @@
+name: Publish catalog release
+
+# Publie screenbox-catalogs.db en GitHub Release (pas dans git, pas Turso).
+# Déclenchement manuel : fournir l’artifact ou s’appuyer sur un runner self-hosted
+# qui a déjà le fichier local. Ici : workflow_dispatch avec upload optionnel.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag release (ex. catalogs-2026-10-11)"
+        required: true
+        type: string
+      prerelease:
+        description: "Pre-release"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require local DB on runner cache / artifact
+        id: db
+        run: |
+          if [ -f screenbox-catalogs.db ]; then
+            echo "found=1" >> "$GITHUB_OUTPUT"
+            ls -lh screenbox-catalogs.db
+          else
+            echo "found=0" >> "$GITHUB_OUTPUT"
+            echo "Pas de screenbox-catalogs.db dans le checkout."
+            echo "Publier depuis une machine locale :"
+            echo "  gh release create ${{ inputs.tag }} screenbox-catalogs.db --title \"Catalogs ${{ inputs.tag }}\" --notes \"Snapshot SQLite (No-Intro + TOSEC + …)\""
+            exit 1
+          fi
+
+      - name: Create / update release
+        if: steps.db.outputs.found == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ inputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" screenbox-catalogs.db --clobber
+          else
+            ARGS=(release create "$TAG" screenbox-catalogs.db --title "Catalogs $TAG" --notes "Snapshot SQLite ScreenBox-Catalogs (hors git — trop volumineux pour Turso/git).")
+            if [ "${{ inputs.prerelease }}" = "true" ]; then
+              ARGS+=(--prerelease)
+            fi
+            gh "${ARGS[@]}"
+          fi

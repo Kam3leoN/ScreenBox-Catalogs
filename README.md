@@ -2,15 +2,31 @@
 
 Catalogues ROM **SQLite** pour [ScreenBox](https://github.com/Kam3leoN/ScreenBox) — fin Dat-O-Matic / `.dat` runtime.
 
-## Contenu
+## Architecture (sans Turso)
+
+La base complète (No-Intro + TOSEC + …) fait **~650 Mo+** : trop grosse pour git et pour Turso (starter).
+
+| Couche | Rôle |
+|---|---|
+| **Conversion locale** | `ConvertDatsToCatalogDb` → `Systems/_shared/Datas/Catalogs/screenbox-catalogs.db` |
+| **GitHub Releases** | Asset `screenbox-catalogs.db` (source de vérité publiée) |
+| **Desk** | Sync depuis la dernière Release → dossier Catalogs local |
+| **Site Vercel** | Index JSON léger (`systems.json`) pour browse / filtres |
+
+```
+DATs locaux → ConvertDatsToCatalogDb → screenbox-catalogs.db
+                                         ├─ gh release upload  → Desk sync
+                                         └─ npm run export:data:index → site
+```
+
+## Contenu dépôt
 
 | Chemin | Rôle |
 |---|---|
-| `screenbox-catalogs.db` | Snapshot publié (sync Desk) |
+| `web/` | Site Vercel — K3UI + index `public/data/systems.json` |
 | `tools/CatalogEditor/` | Éditeur desktop CRUD (fichier → hash) |
-| `web/` | Site Vercel — K3UI Material You 3 Expressive + Turso |
-| `fullsets/` | Extraits optionnels par système |
-| `.github/workflows/export-snapshot.yml` | Dump Turso → commit `.db` |
+| `.github/workflows/publish-release.yml` | Aide publication Release |
+| `screenbox-catalogs.db` | **Non versionné** — publié en Release uniquement |
 
 ## Crédits données
 
@@ -18,31 +34,38 @@ Les seeds proviennent des catalogues publics **No-Intro**, **Redump**, **TOSEC**
 
 ## Desk ScreenBox
 
-**Gestion des catalogues** → synchronise `screenbox-catalogs.db` depuis ce dépôt vers  
+**Gestion des catalogues** → télécharge la dernière Release (`screenbox-catalogs.db`) vers  
 `Systems/_shared/Datas/Catalogs/`.
 
 ## Site
 
 **Production :** [https://screenbox-catalogs.vercel.app](https://screenbox-catalogs.vercel.app)
 
-- Stack : Vite + TypeScript + [K3UI](https://github.com/Kam3leoN/K3ui) (Material You 3 Expressive)
-- Docs UI : [k3ui-docs.vercel.app](https://k3ui-docs.vercel.app)
-- Sync K3UI : `cd web && npm run sync:k3ui` (repo K3ui sibling ou `K3UI_ROOT`)
-- Secrets Vercel / GitHub Actions : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
-- Root Vercel : `web/`
-
-## Turso (source de vérité cloud)
-
 ```powershell
 cd web
-copy .env.example .env.local   # renseigner TURSO_*
-npm run seed:turso             # local screenbox-catalogs.db → Turso
-npm run export:db              # Turso → screenbox-catalogs.db
-npm run export:data:turso      # Turso → public/data/*.json
-npm run export:data:local      # snapshot .db → JSON (build rapide)
+npm run export:data:index   # systems.json depuis le .db local
+npm run build
 ```
 
-Flux cible : édition / import → Turso → `export:db` (Desk/Git) + `export:data` (site).
+- Sync K3UI : `npm run sync:k3ui`
+- Root Vercel : `web/`
+
+## Publier une Release (machine locale)
+
+```powershell
+# 1) Convertir les DAT (ScreenBox)
+dotnet run --project Core/Scripts/ConvertDatsToCatalogDb -c Release -- --root G:\ScreenBox --no-fullsets
+
+# 2) Copier le snapshot
+Copy-Item Systems\_shared\Datas\Catalogs\screenbox-catalogs.db G:\ScreenBox-Catalogs\screenbox-catalogs.db -Force
+
+# 3) Index site + Release
+cd G:\ScreenBox-Catalogs\web
+npm run export:data:index
+cd ..
+$tag = "catalogs-$(Get-Date -Format yyyy-MM-dd)"
+gh release create $tag screenbox-catalogs.db --title "Catalogs $tag" --notes "Snapshot SQLite (No-Intro + TOSEC + …)"
+```
 
 ## CatalogEditor
 
@@ -51,7 +74,7 @@ cd tools/CatalogEditor
 dotnet run -c Release
 ```
 
-Ouvrir `screenbox-catalogs.db` → système → **Sélectionner fichier ROM** → créer l’entrée.
+Ouvrir le `.db` local (ou celui synchronisé par Desk).
 
 ## Conversion locale (ScreenBox)
 

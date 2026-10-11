@@ -1,49 +1,14 @@
-name: Export Turso snapshot
+name: Export Turso snapshot (retired)
 
+# Remplacé par publish-release.yml — la DB complète dépasse les limites Turso/git.
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 4 * * *"
 
 jobs:
-  export:
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-
-      - name: Install web deps
-        working-directory: web
-        run: npm ci
-
-      - name: Dump Turso → screenbox-catalogs.db + JSON
-        working-directory: web
-        env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-          CATALOGS_SOURCE: turso
-        run: |
-          if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
-            echo "TURSO secrets missing — skip"
-            exit 0
-          fi
-          npm run export:db
-          npm run export:data:turso
-
-      - name: Commit snapshot
-        run: |
-          if [ ! -f screenbox-catalogs.db ]; then
-            echo "No db to commit"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add screenbox-catalogs.db
-          # JSON générés sont gitignorés sous web/public/data — seul le .db est versionné
-          git diff --staged --quiet || git commit -m "chore: export catalogs snapshot from Turso"
-          git push
+      - run: |
+          echo "Turso export retired. Use: gh release create … screenbox-catalogs.db"
+          echo "See README.md — Architecture (sans Turso)."
+          exit 0
