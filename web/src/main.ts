@@ -22,8 +22,8 @@ async function loadSystems(): Promise<void> {
 async function hashFile(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const bytes = new Uint8Array(buf);
-  const md5 = await cryptoSubtleHex("MD5", bytes).catch(() => "(MD5 non dispo dans ce navigateur)");
-  const sha1 = await cryptoSubtleHex("SHA-1", bytes);
+  const md5 = await cryptoSubtleHex("MD5", buf).catch(() => "(MD5 non dispo dans ce navigateur)");
+  const sha1 = await cryptoSubtleHex("SHA-1", buf);
   const crc = crc32Hex(bytes);
   return [
     `file: ${file.name}`,
@@ -34,7 +34,7 @@ async function hashFile(file: File): Promise<string> {
   ].join("\n");
 }
 
-async function cryptoSubtleHex(algo: AlgorithmIdentifier, data: Uint8Array): Promise<string> {
+async function cryptoSubtleHex(algo: AlgorithmIdentifier, data: ArrayBuffer): Promise<string> {
   const dig = await crypto.subtle.digest(algo, data);
   return [...new Uint8Array(dig)].map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
 }

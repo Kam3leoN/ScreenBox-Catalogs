@@ -23,10 +23,13 @@ Les seeds proviennent des catalogues publics **No-Intro**, **Redump**, **TOSEC**
 
 ## Site
 
+**Production :** [https://screenbox-catalogs.vercel.app](https://screenbox-catalogs.vercel.app)
+
 - Stack : Vite + TypeScript + [K3UI](https://github.com/Kam3leoN/K3ui) (Material You 3 Expressive)
 - Docs UI : [k3ui-docs.vercel.app](https://k3ui-docs.vercel.app)
 - Sync K3UI : `cd web && npm run sync:k3ui` (repo K3ui sibling ou `K3UI_ROOT`)
 - Secrets Vercel : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, OAuth GitHub pour CRUD
+- Root Vercel : `web/`
 
 ## CatalogEditor
 
