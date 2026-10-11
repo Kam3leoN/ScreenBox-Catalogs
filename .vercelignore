@@ -1,0 +1,9 @@
+screenbox-catalogs.db
+*.db
+.deps
+.temp
+tools
+**/node_modules
+**/bin
+**/obj
+.git
