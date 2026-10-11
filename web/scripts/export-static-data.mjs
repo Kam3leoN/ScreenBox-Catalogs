@@ -33,6 +33,8 @@ function resolveSourceMode() {
   }
 }
 
+const indexOnly = process.argv.includes("--index-only");
+
 function slugify(id) {
   return id
     .trim()
@@ -201,6 +203,14 @@ const index = {
 };
 
 fs.writeFileSync(path.join(outDir, "systems.json"), JSON.stringify(index));
+
+if (indexOnly) {
+  console.log(
+    `[export-static-data] OK (index-only) → ${systems.length} systèmes, ${index.totals.games} jeux, ${index.totals.roms} roms`,
+  );
+  db.close();
+  process.exit(0);
+}
 
 let exported = 0;
 for (const s of systems) {
