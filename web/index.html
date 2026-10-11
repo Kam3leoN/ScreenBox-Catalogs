@@ -27,42 +27,64 @@
       </div>
     </header>
 
-    <main class="page" style="padding: 1.5rem; max-width: 1100px; margin: 0 auto">
-      <section class="hero" style="margin-bottom: 1.5rem">
-        <h1 class="display-small">Catalogues SQLite</h1>
-        <p class="body-large">
-          Material You 3 Expressive (K3UI) — browse public, complétion pour éditeurs GitHub.
+    <main class="page">
+      <section class="hero" style="margin-bottom: 1.25rem">
+        <h1 class="display-small" style="margin: 0 0 0.35rem">Catalogues SQLite</h1>
+        <p class="body-large" style="margin: 0; opacity: 0.85">
+          Material You 3 Expressive (K3UI) — browse public, complétion pour éditeurs.
         </p>
       </section>
 
-      <p id="catalogSummary" class="body-medium" style="opacity: 0.85; margin-bottom: 1rem">Chargement du catalogue…</p>
+      <p id="catalogSummary" class="body-medium" style="opacity: 0.85; margin: 0 0 1rem">
+        Chargement du catalogue…
+      </p>
 
-      <div class="field" style="margin-bottom: 1rem">
-        <label class="field-label" for="q">Recherche</label>
-        <input id="q" class="field-input" type="search" placeholder="Filtrer systèmes / jeux…" />
+      <div class="section-card">
+        <div class="field">
+          <label class="field-label" for="q">Recherche</label>
+          <input id="q" class="field-input" type="search" placeholder="Filtrer systèmes / roms…" />
+        </div>
       </div>
 
-      <div class="card" style="padding: 1rem; margin-bottom: 1rem">
-        <h2 class="title-medium">Systèmes</h2>
-        <ul id="systems" class="list"></ul>
+      <div class="section-card">
+        <h2 class="title-medium" style="margin: 0 0 0.85rem">Systèmes</h2>
+        <div id="systems" class="systems-grid"></div>
         <p id="systemsEmpty" class="body-medium" style="opacity: 0.7" hidden>
           Aucun système — lancez <code>npm run export:data</code> puis rebuild.
         </p>
       </div>
 
-      <div id="gamesPanel" class="card" style="padding: 1rem; margin-bottom: 1rem" hidden>
-        <h2 id="gamesTitle" class="title-medium">Jeux</h2>
-        <ul id="games" class="list"></ul>
-        <p id="gamesEmpty" class="body-medium" style="opacity: 0.7" hidden>Aucun jeu.</p>
+      <div id="gamesPanel" class="section-card" hidden>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.85rem">
+          <h2 id="gamesTitle" class="title-medium" style="margin: 0">ROMs</h2>
+          <span id="gamesCount" class="body-small" style="opacity: 0.7"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="roms-table" id="romsTable">
+            <thead>
+              <tr>
+                <th>Jeu</th>
+                <th>ROM</th>
+                <th>Type</th>
+                <th>Région</th>
+                <th>CRC</th>
+                <th>MD5</th>
+                <th>SHA1</th>
+              </tr>
+            </thead>
+            <tbody id="romsBody"></tbody>
+          </table>
+        </div>
+        <p id="gamesEmpty" class="body-medium" style="opacity: 0.7; margin-top: 0.75rem" hidden>Aucune ROM.</p>
       </div>
 
-      <div class="card" style="padding: 1rem">
-        <h2 class="title-medium">Complétion</h2>
-        <p class="body-medium">Déposez un fichier pour calculer size / CRC / MD5 / SHA1 (client).</p>
-        <div id="drop" class="dropzone" style="border: 1px dashed var(--md-sys-color-outline); padding: 1.5rem; border-radius: 1rem; text-align: center">
-          Glisser-déposer un ROM ici
-        </div>
-        <pre id="hashOut" class="body-small" style="white-space: pre-wrap; margin-top: 1rem"></pre>
+      <div class="section-card">
+        <h2 class="title-medium" style="margin: 0 0 0.5rem">Complétion</h2>
+        <p class="body-medium" style="margin: 0 0 0.85rem; opacity: 0.85">
+          Déposez un fichier pour calculer size / CRC / MD5 / SHA1 (client).
+        </p>
+        <div id="drop" class="dropzone">Glisser-déposer un ROM ici</div>
+        <pre id="hashOut" class="hash-out"></pre>
       </div>
     </main>
 

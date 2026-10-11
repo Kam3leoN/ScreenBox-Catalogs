@@ -2,6 +2,7 @@
 **/obj/
 **/node_modules/
 web/dist/
+.deps/
 .temp/
 *.user
 *.suo
@@ -9,3 +10,5 @@ web/dist/
 .env
 .env.*
 !.env.example
+
+.vercel

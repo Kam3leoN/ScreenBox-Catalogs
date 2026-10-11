@@ -1,0 +1,229 @@
+:root {
+  --md-sys-color-primary: #0099ff;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-surface: #0c0c10;
+  --md-sys-color-surface-container: #14141a;
+  --md-sys-color-surface-container-high: #1c1c24;
+  --md-sys-color-on-surface: #e8e8f0;
+  --md-sys-color-on-surface-variant: #b0b0bc;
+  --md-sys-color-outline: #5a5a66;
+  --md-sys-shape-corner-large: 1.25rem;
+  --md-sys-shape-corner-medium: 0.85rem;
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Google Sans", "Segoe UI", system-ui, sans-serif;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+}
+
+.page {
+  padding: 1.25rem 1.5rem 3rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.app-bar {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 16%, #0c0c10);
+  padding: 0.85rem 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.app-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.app-bar-title {
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.btn {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+}
+
+.btn--filled {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.section-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1.1rem;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.field-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 1rem;
+  border-radius: var(--md-sys-shape-corner-medium);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 70%, transparent);
+  background: #121218;
+  color: inherit;
+}
+
+/* Cards systèmes — 4 colonnes */
+.systems-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+@media (max-width: 1100px) {
+  .systems-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .systems-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .systems-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.system-card {
+  appearance: none;
+  text-align: left;
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 35%, transparent);
+  background: var(--md-sys-color-surface-container-high);
+  color: inherit;
+  border-radius: var(--md-sys-shape-corner-large);
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  min-height: 7.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.system-card:hover,
+.system-card:focus-visible {
+  outline: none;
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--md-sys-color-primary) 12%, #1c1c24);
+}
+
+.system-card.is-active {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+}
+
+.system-card__title {
+  font-weight: 650;
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.system-card__meta {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.8rem;
+}
+
+.system-card__stats {
+  margin-top: auto;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--md-sys-color-primary) 80%, white);
+}
+
+/* Table ROMs */
+.table-wrap {
+  overflow: auto;
+  border-radius: var(--md-sys-shape-corner-medium);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 35%, transparent);
+  max-height: min(60vh, 640px);
+}
+
+.roms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.roms-table th,
+.roms-table td {
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 28%, transparent);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.roms-table th {
+  position: sticky;
+  top: 0;
+  background: #1a1a22;
+  z-index: 1;
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600;
+}
+
+.roms-table tbody tr:hover {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+}
+
+.roms-table td.mono {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+  font-size: 0.72rem;
+  margin-right: 0.25rem;
+}
+
+.dropzone {
+  border: 1.5px dashed color-mix(in srgb, var(--md-sys-color-outline) 80%, transparent);
+  padding: 1.5rem;
+  border-radius: var(--md-sys-shape-corner-large);
+  text-align: center;
+  cursor: pointer;
+  background: #121218;
+}
+
+.dropzone:hover {
+  border-color: var(--md-sys-color-primary);
+}
+
+.hash-out {
+  white-space: pre-wrap;
+  margin-top: 1rem;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.82rem;
+  color: #d8d8e4;
+}

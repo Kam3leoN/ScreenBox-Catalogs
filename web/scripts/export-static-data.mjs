@@ -89,34 +89,60 @@ for (const s of systems) {
               WHEN 'europe' THEN 0 WHEN 'world' THEN 1 WHEN 'usa' THEN 2 WHEN 'japan' THEN 3 ELSE 9 END
             LIMIT 1) AS name,
            (SELECT group_concat(type, ',') FROM game_types gt WHERE gt.game_id = g.id) AS types,
-           (SELECT group_concat(region || ':' || name, '|') FROM game_regions gr2 WHERE gr2.game_id = g.id) AS regions,
-           (SELECT COUNT(*) FROM roms r WHERE r.game_id = g.id) AS rom_count
+           (SELECT group_concat(region, ',') FROM game_regions gr2 WHERE gr2.game_id = g.id) AS regions,
+           r.rom AS rom,
+           r.size AS size,
+           r.crc AS crc,
+           r.md5 AS md5,
+           r.sha1 AS sha1
     FROM games g
+    LEFT JOIN roms r ON r.game_id = g.id
     WHERE g.system_id = ?
-    ORDER BY name COLLATE NOCASE
+    ORDER BY name COLLATE NOCASE, rom COLLATE NOCASE
   `);
   stmt.bind([s.id]);
-  const games = [];
+  const gamesMap = new Map();
+  const roms = [];
   while (stmt.step()) {
     const r = stmt.getAsObject();
-    games.push({
-      id: Number(r.game_id),
-      name: r.name == null ? `(game #${r.game_id})` : String(r.name),
-      types: r.types ? String(r.types).split(",") : [],
-      regions: r.regions
-        ? String(r.regions).split("|").map((x) => {
-            const i = x.indexOf(":");
-            return i < 0 ? { region: x, name: x } : { region: x.slice(0, i), name: x.slice(i + 1) };
-          })
-        : [],
-      roms: Number(r.rom_count ?? 0),
-    });
+    const gameId = Number(r.game_id);
+    const gameName = r.name == null ? `(game #${gameId})` : String(r.name);
+    const types = r.types ? String(r.types).split(",") : [];
+    const regions = r.regions ? String(r.regions).split(",") : [];
+    if (!gamesMap.has(gameId)) {
+      gamesMap.set(gameId, {
+        id: gameId,
+        name: gameName,
+        types,
+        regions,
+        roms: 0,
+      });
+    }
+    if (r.rom != null) {
+      gamesMap.get(gameId).roms += 1;
+      roms.push({
+        gameId,
+        game: gameName,
+        rom: String(r.rom),
+        types,
+        regions,
+        size: r.size == null ? null : Number(r.size),
+        crc: r.crc == null ? null : String(r.crc),
+        md5: r.md5 == null ? null : String(r.md5),
+        sha1: r.sha1 == null ? null : String(r.sha1),
+      });
+    }
   }
   stmt.free();
 
   fs.writeFileSync(
     path.join(bySystemDir, `${s.slug}.json`),
-    JSON.stringify({ id: s.id, source: s.source, games }),
+    JSON.stringify({
+      id: s.id,
+      source: s.source,
+      games: [...gamesMap.values()],
+      roms,
+    }),
   );
   exported++;
 }
