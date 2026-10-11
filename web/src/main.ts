@@ -4,6 +4,7 @@ import "./styles.css";
 type SystemRow = {
   id: string;
   source: string;
+  family?: string;
   games: number;
   roms: number;
   slug: string;
@@ -26,17 +27,54 @@ type RomRow = {
   sha1: string | null;
 };
 
+const SOURCE_FILTERS = ["Tous", "No-Intro", "TOSEC", "MAME", "HBMAME", "Redump"] as const;
+const FAMILY_FILTERS = ["Tous", "Arcade", "Consoles", "Portables", "Ordinateurs", "Flippers", "Autres"] as const;
+
 let catalog: CatalogIndex | null = null;
 let activeSystem: SystemRow | null = null;
 let activeRoms: RomRow[] = [];
+let sourceFilter: (typeof SOURCE_FILTERS)[number] = "Tous";
+let familyFilter: (typeof FAMILY_FILTERS)[number] = "Tous";
 
 function $(id: string): HTMLElement | null {
   return document.getElementById(id);
 }
 
+function wireFilterChips(
+  containerId: string,
+  options: readonly string[],
+  getActive: () => string,
+  setActive: (v: string) => void,
+): void {
+  const host = $(containerId);
+  if (!host) return;
+  host.innerHTML = "";
+  for (const opt of options) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "filter-chip" + (getActive() === opt ? " is-active" : "");
+    btn.textContent = opt;
+    btn.addEventListener("click", () => {
+      setActive(opt);
+      for (const el of host.querySelectorAll(".filter-chip")) {
+        el.classList.toggle("is-active", el.textContent === opt);
+      }
+      renderSystems(($("q") as HTMLInputElement | null)?.value ?? "");
+    });
+    host.appendChild(btn);
+  }
+}
+
 async function loadSystems(): Promise<void> {
   const empty = $("systemsEmpty");
   const summary = $("catalogSummary");
+
+  wireFilterChips("sourceFilters", SOURCE_FILTERS, () => sourceFilter, (v) => {
+    sourceFilter = v as typeof sourceFilter;
+  });
+  wireFilterChips("familyFilters", FAMILY_FILTERS, () => familyFilter, (v) => {
+    familyFilter = v as typeof familyFilter;
+  });
 
   try {
     const res = await fetch("/data/systems.json");
@@ -55,26 +93,34 @@ async function loadSystems(): Promise<void> {
   }
 }
 
+function matchesFilters(s: SystemRow, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (sourceFilter !== "Tous" && s.source !== sourceFilter) return false;
+  const family = s.family || "Autres";
+  if (familyFilter !== "Tous" && family !== familyFilter) return false;
+  if (q.length === 0) return true;
+  return (
+    s.id.toLowerCase().includes(q) ||
+    s.source.toLowerCase().includes(q) ||
+    family.toLowerCase().includes(q)
+  );
+}
+
 function renderSystems(query: string): void {
   const grid = $("systems");
   if (!grid || !catalog) return;
-  const q = query.trim().toLowerCase();
   grid.innerHTML = "";
 
-  const filtered = catalog.systems.filter(
-    (s) =>
-      q.length === 0 ||
-      s.id.toLowerCase().includes(q) ||
-      s.source.toLowerCase().includes(q),
-  );
+  const filtered = catalog.systems.filter((s) => matchesFilters(s, query));
 
   for (const s of filtered) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "system-card" + (activeSystem?.slug === s.slug ? " is-active" : "");
+    const family = s.family || "Autres";
     btn.innerHTML = `
       <div class="system-card__title">${escapeHtml(s.id)}</div>
-      <div class="system-card__meta">${escapeHtml(s.source)}</div>
+      <div class="system-card__meta">${escapeHtml(s.source)}<span class="dot">·</span>${escapeHtml(family)}</div>
       <div class="system-card__stats">${s.games.toLocaleString("fr-FR")} jeux · ${s.roms.toLocaleString("fr-FR")} roms</div>
     `;
     btn.addEventListener("click", () => void openSystem(s));
@@ -82,7 +128,17 @@ function renderSystems(query: string): void {
   }
 
   const empty = $("systemsEmpty");
-  if (empty) empty.hidden = filtered.length > 0;
+  if (empty) {
+    empty.hidden = filtered.length > 0;
+    if (filtered.length === 0) empty.textContent = "Aucun système pour ces filtres.";
+  }
+
+  const summary = $("catalogSummary");
+  if (summary && catalog) {
+    const games = filtered.reduce((a, s) => a + s.games, 0);
+    const roms = filtered.reduce((a, s) => a + s.roms, 0);
+    summary.textContent = `${filtered.length} / ${catalog.totals.systems} systèmes · ${games.toLocaleString("fr-FR")} jeux · ${roms.toLocaleString("fr-FR")} roms`;
+  }
 
   if (activeSystem) renderRomsTable(query);
 }
@@ -106,7 +162,7 @@ async function openSystem(s: SystemRow): Promise<void> {
   try {
     const res = await fetch(`/data/by-system/${encodeURIComponent(s.slug)}.json`);
     if (!res.ok) throw new Error(String(res.status));
-    const data = (await res.json()) as { roms?: RomRow[]; games?: { name: string }[] };
+    const data = (await res.json()) as { roms?: RomRow[] };
     activeRoms = Array.isArray(data.roms) ? data.roms : [];
     renderRomsTable(($("q") as HTMLInputElement | null)?.value ?? "");
   } catch (err) {

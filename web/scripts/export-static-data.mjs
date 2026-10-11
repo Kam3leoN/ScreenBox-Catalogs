@@ -14,6 +14,7 @@ const dbPath = process.env.CATALOGS_DB
   : path.join(repoRoot, "screenbox-catalogs.db");
 const outDir = path.join(root, "public", "data");
 const bySystemDir = path.join(outDir, "by-system");
+const familyMapPath = path.join(root, "data", "system_family_map.json");
 
 function slugify(id) {
   return id
@@ -21,6 +22,98 @@ function slugify(id) {
     .replace(/[<>:"/\\|?*]/g, "_")
     .replace(/\s+/g, " ")
     .slice(0, 180);
+}
+
+function normalizeSource(source) {
+  const s = (source || "").trim();
+  if (/no-?intro/i.test(s)) return "No-Intro";
+  if (/redump/i.test(s)) return "Redump";
+  if (/tosec/i.test(s)) return "TOSEC";
+  if (/hbmame/i.test(s)) return "HBMAME";
+  if (/^mame$/i.test(s) || /\bmame\b/i.test(s)) return "MAME";
+  return s || "Autres";
+}
+
+function heuristicFamily(id) {
+  const n = id.toLowerCase();
+  if (/pinball|flipper|visual pinball|future pinball|zaccaria/.test(n)) return "Flippers";
+  if (
+    /play system|cps|mame|finalburn|neogeo$|neo-geo$|naomi|model [23]|atomiswave|chihiro|cave|daphne|singe|hbmame/.test(
+      n,
+    )
+  )
+    return "Arcade";
+  if (
+    /game boy|game gear|lynx|wonderswan|neo.?geo pocket|pokemon mini|supervision|ngp|psp|vita|nintendo ds|3ds|arduboy|game master/.test(
+      n,
+    )
+  )
+    return "Portables";
+  if (
+    /msx|atari st|atari.?8|vic-20|commodore|amstrad|zx spectrum|amiga|pc-88|pc-98|x68000|apple|macintosh|dos|windows|fm towns|sharp x1|thomson|oric/.test(
+      n,
+    )
+  )
+    return "Ordinateurs";
+  if (
+    /nintendo|sega|atari|sony|nec|pc engine|coleco|intellivision|odyssey|vectrex|channel f|saturn|mega drive|master system|32x|n64|snes|nes|sg-1000|jaguar|7800|5200|2600/.test(
+      n,
+    )
+  )
+    return "Consoles";
+  return "Autres";
+}
+
+function loadFamilyMap() {
+  const map = Object.create(null);
+  const candidates = [
+    familyMapPath,
+    path.resolve(repoRoot, "..", "ScreenBox", "Core", "Shared", "Data", "systems.json"),
+  ];
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    try {
+      const data = JSON.parse(fs.readFileSync(p, "utf8"));
+      if (data.systems && Array.isArray(data.systems)) {
+        const catMap = {
+          Arcade: "Arcade",
+          Handheld: "Portables",
+          Console: "Consoles",
+          Computer: "Ordinateurs",
+          Computers: "Ordinateurs",
+          Pinball: "Flippers",
+        };
+        for (const s of data.systems) {
+          const fam = catMap[s.category] || "Autres";
+          for (const k of [s.id, s.pathFolder, ...(s.aliases || [])]) {
+            if (k) map[String(k)] = fam;
+          }
+        }
+      } else {
+        Object.assign(map, data);
+      }
+      break;
+    } catch {
+      /* next */
+    }
+  }
+  return map;
+}
+
+function resolveFamily(id, familyMap) {
+  if (familyMap[id]) return familyMap[id];
+  const idLower = id.toLowerCase();
+  for (const [k, v] of Object.entries(familyMap)) {
+    const key = String(k);
+    if (idLower === key.toLowerCase()) return v;
+  }
+  // Match pathFolder-like substrings (longest first)
+  const keys = Object.keys(familyMap).sort((a, b) => b.length - a.length);
+  for (const k of keys) {
+    if (k.length < 3) continue;
+    if (idLower.includes(String(k).toLowerCase())) return familyMap[k];
+  }
+  return heuristicFamily(id);
 }
 
 if (!fs.existsSync(dbPath)) {
@@ -47,15 +140,19 @@ const systemsRs = db.exec(`
 
 const cols = systemsRs[0]?.columns ?? [];
 const rows = systemsRs[0]?.values ?? [];
+const familyMap = loadFamilyMap();
 const systems = rows.map((row) => {
   const o = Object.fromEntries(cols.map((c, i) => [c, row[i]]));
+  const id = String(o.id);
+  const source = normalizeSource(String(o.source ?? ""));
   return {
-    id: String(o.id),
-    source: String(o.source ?? ""),
+    id,
+    source,
+    family: resolveFamily(id, familyMap),
     version: o.version == null ? null : String(o.version),
     games: Number(o.games ?? 0),
     roms: Number(o.roms ?? 0),
-    slug: slugify(String(o.id)),
+    slug: slugify(id),
   };
 });
 

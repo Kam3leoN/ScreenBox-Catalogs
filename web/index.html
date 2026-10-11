@@ -40,9 +40,18 @@
       </p>
 
       <div class="section-card">
-        <div class="field">
+        <div class="field" style="margin-bottom: 1rem">
           <label class="field-label" for="q">Recherche</label>
           <input id="q" class="field-input" type="search" placeholder="Filtrer systèmes / roms…" />
+        </div>
+
+        <div class="filter-block">
+          <div class="filter-label">Catalogue</div>
+          <div id="sourceFilters" class="chip-row" role="group" aria-label="Filtre catalogue"></div>
+        </div>
+        <div class="filter-block" style="margin-top: 0.85rem">
+          <div class="filter-label">Famille</div>
+          <div id="familyFilters" class="chip-row" role="group" aria-label="Filtre famille"></div>
         </div>
       </div>
 
