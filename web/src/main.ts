@@ -154,29 +154,37 @@ function initFilterChips(k: K3Api): void {
     renderSystems(getSearchQuery());
   };
 
-  k.Chip.init("#sourceFilters", {
-    data: SOURCE_FILTERS.map((text) => ({
-      id: text,
-      text,
-      type: "filter",
-      selected: false,
-    })),
-    onChipSelect: onSelect,
-  });
-
-  k.Chip.init("#familyFilters", {
-    data: FAMILY_FILTERS.map((text) => ({
-      id: text,
-      text,
-      type: "filter",
-      selected: false,
-    })),
-    onChipSelect: onSelect,
-  });
+  // Chip.init attend un HTMLElement (pas un sélecteur string — sinon .length itère les caractères).
+  const sourceEl = $("sourceFilters");
+  const familyEl = $("familyFilters");
+  if (sourceEl) {
+    k.Chip.init(sourceEl, {
+      data: SOURCE_FILTERS.map((text) => ({
+        id: text,
+        text,
+        type: "filter",
+        selected: false,
+      })),
+      onChipSelect: onSelect,
+    });
+  }
+  if (familyEl) {
+    k.Chip.init(familyEl, {
+      data: FAMILY_FILTERS.map((text) => ({
+        id: text,
+        text,
+        type: "filter",
+        selected: false,
+      })),
+      onChipSelect: onSelect,
+    });
+  }
 }
 
 function createSystemCard(s: SystemRow): HTMLElement {
   const family = s.family || "Autres";
+  const col = document.createElement("div");
+  col.className = "s12 m6 l3";
   const card = document.createElement("article");
   card.className = "card card--outlined card--interactive";
   if (activeSystem?.slug === s.slug) card.classList.add("is-active");
@@ -201,7 +209,8 @@ function createSystemCard(s: SystemRow): HTMLElement {
       open();
     }
   });
-  return card;
+  col.appendChild(card);
+  return col;
 }
 
 function renderSystems(query: string): void {
@@ -468,7 +477,11 @@ async function loadSystems(): Promise<void> {
 
 async function main(): Promise<void> {
   const k = await waitForK();
-  initFilterChips(k);
+  try {
+    initFilterChips(k);
+  } catch (err) {
+    console.error("[catalogs] Chip init failed", err);
+  }
   wireUi();
   wireDrop();
   await loadSystems();
