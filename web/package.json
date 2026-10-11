@@ -5,6 +5,10 @@
   "type": "module",
   "scripts": {
     "export:data": "node scripts/export-static-data.mjs",
+    "export:data:local": "node scripts/export-static-data.mjs --local",
+    "export:data:turso": "node scripts/export-static-data.mjs --turso",
+    "export:db": "node scripts/export-db-from-turso.mjs",
+    "seed:turso": "node scripts/seed-turso.mjs",
     "predev": "npm run export:data",
     "dev": "vite",
     "prebuild": "npm run export:data",

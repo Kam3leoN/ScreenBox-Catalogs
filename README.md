@@ -28,8 +28,21 @@ Les seeds proviennent des catalogues publics **No-Intro**, **Redump**, **TOSEC**
 - Stack : Vite + TypeScript + [K3UI](https://github.com/Kam3leoN/K3ui) (Material You 3 Expressive)
 - Docs UI : [k3ui-docs.vercel.app](https://k3ui-docs.vercel.app)
 - Sync K3UI : `cd web && npm run sync:k3ui` (repo K3ui sibling ou `K3UI_ROOT`)
-- Secrets Vercel : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, OAuth GitHub pour CRUD
+- Secrets Vercel / GitHub Actions : `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
 - Root Vercel : `web/`
+
+## Turso (source de vérité cloud)
+
+```powershell
+cd web
+copy .env.example .env.local   # renseigner TURSO_*
+npm run seed:turso             # local screenbox-catalogs.db → Turso
+npm run export:db              # Turso → screenbox-catalogs.db
+npm run export:data:turso      # Turso → public/data/*.json
+npm run export:data:local      # snapshot .db → JSON (build rapide)
+```
+
+Flux cible : édition / import → Turso → `export:db` (Desk/Git) + `export:data` (site).
 
 ## CatalogEditor
 

@@ -1,11 +1,13 @@
 /**
- * Exporte le snapshot ../screenbox-catalogs.db → public/data/*.json
- * (browse Vercel sans Turso).
+ * Exporte catalogues → public/data/*.json
+ * Source : CATALOGS_SOURCE=turso|local (défaut: turso si TURSO_* présents, sinon .db local).
  */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import initSqlJs from "sql.js";
+import { loadTursoEnv } from "./turso-env.mjs";
+import { pullTursoIntoSqlJs } from "./turso-pull.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(root, "..");
@@ -15,6 +17,21 @@ const dbPath = process.env.CATALOGS_DB
 const outDir = path.join(root, "public", "data");
 const bySystemDir = path.join(outDir, "by-system");
 const familyMapPath = path.join(root, "data", "system_family_map.json");
+
+function resolveSourceMode() {
+  if (process.argv.includes("--turso")) return "turso";
+  if (process.argv.includes("--local")) return "local";
+  const forced = (process.env.CATALOGS_SOURCE || "").toLowerCase();
+  if (forced === "turso" || forced === "local") return forced;
+  // Défaut : snapshot local s’il existe (build rapide) ; sinon Turso.
+  if (fs.existsSync(dbPath)) return "local";
+  try {
+    loadTursoEnv();
+    return "turso";
+  } catch {
+    return "local";
+  }
+}
 
 function slugify(id) {
   return id
@@ -116,14 +133,23 @@ function resolveFamily(id, familyMap) {
   return heuristicFamily(id);
 }
 
-if (!fs.existsSync(dbPath)) {
-  console.error(`[export-static-data] DB introuvable : ${dbPath}`);
-  process.exit(1);
+const sourceMode = resolveSourceMode();
+let db;
+let sourceLabel;
+if (sourceMode === "turso") {
+  console.log("[export-static-data] source=turso");
+  db = await pullTursoIntoSqlJs();
+  sourceLabel = "turso";
+} else {
+  if (!fs.existsSync(dbPath)) {
+    console.error(`[export-static-data] DB introuvable : ${dbPath}`);
+    process.exit(1);
+  }
+  console.log(`[export-static-data] source=local ${dbPath}`);
+  const SQL = await initSqlJs();
+  db = new SQL.Database(fs.readFileSync(dbPath));
+  sourceLabel = path.basename(dbPath);
 }
-
-const SQL = await initSqlJs();
-const filebuffer = fs.readFileSync(dbPath);
-const db = new SQL.Database(filebuffer);
 
 fs.mkdirSync(bySystemDir, { recursive: true });
 
@@ -164,7 +190,7 @@ for (const row of metaRs[0]?.values ?? []) {
 
 const index = {
   generatedUtc: new Date().toISOString(),
-  sourceDb: path.basename(dbPath),
+  sourceDb: sourceLabel,
   meta,
   totals: {
     systems: systems.length,

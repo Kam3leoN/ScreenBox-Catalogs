@@ -10,21 +10,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install turso CLI
-        run: |
-          curl -sSfL https://get.tur.so/install.sh | bash
-          echo "$HOME/.turso" >> $GITHUB_PATH
-      - name: Dump database
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Dump Turso → screenbox-catalogs.db + JSON
+        working-directory: web
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          CATALOGS_SOURCE: turso
         run: |
-          if [ -z "$TURSO_DATABASE_URL" ]; then
+          if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ]; then
             echo "TURSO secrets missing — skip"
             exit 0
           fi
-          # Placeholder: dump via turso db shell when DB name configured
-          echo "Configure turso dump → screenbox-catalogs.db"
+          npm run export:db
+          npm run export:data:turso
+
       - name: Commit snapshot
         run: |
           if [ ! -f screenbox-catalogs.db ]; then
@@ -34,5 +44,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add screenbox-catalogs.db
-          git diff --staged --quiet || git commit -m "chore: export catalogs snapshot"
+          # JSON générés sont gitignorés sous web/public/data — seul le .db est versionné
+          git diff --staged --quiet || git commit -m "chore: export catalogs snapshot from Turso"
           git push
