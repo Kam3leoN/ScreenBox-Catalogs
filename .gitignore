@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/node_modules/
+web/dist/
+.temp/
+*.user
+*.suo
+.DS_Store
+.env
+.env.*
+!.env.example

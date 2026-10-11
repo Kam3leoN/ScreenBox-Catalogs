@@ -1,0 +1,43 @@
+/* Placeholder until `npm run sync:k3ui` — Material You tokens minimal for offline preview */
+:root {
+  --md-sys-color-primary: #0099ff;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-surface: #0c0c10;
+  --md-sys-color-on-surface: #e8e8f0;
+  --md-sys-color-outline: #5a5a66;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  font-family: "Google Sans", "Segoe UI", system-ui, sans-serif;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+}
+.app-bar {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 18%, #0c0c10);
+  padding: 0.75rem 1.25rem;
+}
+.app-bar-title { font-weight: 600; }
+.btn {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+}
+.card {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 8%, #14141a);
+  border-radius: 1.25rem;
+}
+.field-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--md-sys-color-outline);
+  background: #121218;
+  color: inherit;
+}
+.list { list-style: none; padding: 0; margin: 0; }
+.list-item { padding: 0.5rem 0; border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 40%, transparent); }

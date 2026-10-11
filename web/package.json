@@ -1,0 +1,21 @@
+{
+  "name": "screenbox-catalogs-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "sync:k3ui": "node scripts/sync-k3ui.mjs"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@vercel/node": "^5.3.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7"
+  }
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ScreenBox Catalogs</title>
+    <link rel="stylesheet" href="/k3ui/k3ui.min.css" />
+    <script>
+      window.K3UI_OPTIONS = {
+        DynamicColorManager: {
+          sourceColor: "#0099FF",
+          specVersion: "2025",
+          variant: 2,
+          contrastLevel: 0,
+          platform: "phone",
+        },
+      };
+    </script>
+  </head>
+  <body>
+    <header class="app-bar app-bar--small">
+      <div class="app-bar-row">
+        <span class="app-bar-title">ScreenBox Catalogs</span>
+        <span class="app-bar-trailing">
+          <button type="button" id="btnTheme" class="btn btn--text btn--sm ripple">Thème</button>
+        </span>
+      </div>
+    </header>
+
+    <main class="page" style="padding: 1.5rem; max-width: 1100px; margin: 0 auto">
+      <section class="hero" style="margin-bottom: 1.5rem">
+        <h1 class="display-small">Catalogues SQLite</h1>
+        <p class="body-large">
+          Material You 3 Expressive (K3UI) — browse public, complétion pour éditeurs GitHub.
+        </p>
+      </section>
+
+      <div class="field" style="margin-bottom: 1rem">
+        <label class="field-label" for="q">Recherche</label>
+        <input id="q" class="field-input" type="search" placeholder="Nom, CRC, MD5, SHA1…" />
+      </div>
+
+      <div class="card" style="padding: 1rem; margin-bottom: 1rem">
+        <h2 class="title-medium">Systèmes</h2>
+        <ul id="systems" class="list"></ul>
+        <p id="systemsEmpty" class="body-medium" style="opacity: 0.7">
+          Connectez Turso (<code>TURSO_DATABASE_URL</code>) ou servez le snapshot local via l’API.
+        </p>
+      </div>
+
+      <div class="card" style="padding: 1rem">
+        <h2 class="title-medium">Complétion</h2>
+        <p class="body-medium">Déposez un fichier pour calculer size / CRC / MD5 / SHA1 (client).</p>
+        <div id="drop" class="dropzone" style="border: 1px dashed var(--md-sys-color-outline); padding: 1.5rem; border-radius: 1rem; text-align: center">
+          Glisser-déposer un ROM ici
+        </div>
+        <pre id="hashOut" class="body-small" style="white-space: pre-wrap; margin-top: 1rem"></pre>
+      </div>
+    </main>
+
+    <script type="module" src="/k3ui/k3ui.min.js"></script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
