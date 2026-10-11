@@ -1,6 +1,12 @@
 import { md5Hex } from "./md5";
 import "./styles.css";
 
+const RELEASE_URL = "https://github.com/Kam3leoN/ScreenBox-Catalogs/releases/latest";
+const PAGE_SIZE = 48;
+
+const SOURCE_FILTERS = ["No-Intro", "TOSEC", "MAME", "HBMAME", "Redump"] as const;
+const FAMILY_FILTERS = ["Arcade", "Consoles", "Portables", "Ordinateurs", "Flippers", "Autres"] as const;
+
 type SystemRow = {
   id: string;
   source: string;
@@ -27,77 +33,113 @@ type RomRow = {
   sha1: string | null;
 };
 
-const SOURCE_FILTERS = ["Tous", "No-Intro", "TOSEC", "MAME", "HBMAME", "Redump"] as const;
-const FAMILY_FILTERS = ["Tous", "Arcade", "Consoles", "Portables", "Ordinateurs", "Flippers", "Autres"] as const;
+type ChipDatum = {
+  id?: string;
+  text?: string;
+  value?: string;
+  type?: string;
+  selected?: boolean;
+};
+
+type ChipInstance = {
+  getData: () => ChipDatum[];
+};
+
+type K3Api = {
+  Chip: {
+    init: (el: string | HTMLElement, options?: Record<string, unknown>) => unknown;
+    getInstance: (el: HTMLElement) => ChipInstance | null;
+  };
+  ThemeManager?: {
+    toggle?: () => void;
+    setTheme: (theme: string) => void;
+    isDark: () => boolean;
+    currentTheme?: string;
+  };
+  Snackbar?: {
+    show: (opts: { text: string }) => void;
+  };
+};
+
+declare global {
+  interface Window {
+    K?: K3Api;
+  }
+}
 
 let catalog: CatalogIndex | null = null;
 let activeSystem: SystemRow | null = null;
 let activeRoms: RomRow[] = [];
-let sourceFilter: (typeof SOURCE_FILTERS)[number] = "Tous";
-let familyFilter: (typeof FAMILY_FILTERS)[number] = "Tous";
+let filteredSystems: SystemRow[] = [];
+let visibleCount = PAGE_SIZE;
 
 function $(id: string): HTMLElement | null {
   return document.getElementById(id);
 }
 
-function wireFilterChips(
-  containerId: string,
-  options: readonly string[],
-  getActive: () => string,
-  setActive: (v: string) => void,
-): void {
-  const host = $(containerId);
-  if (!host) return;
-  host.innerHTML = "";
-  for (const opt of options) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "filter-chip" + (getActive() === opt ? " is-active" : "");
-    btn.textContent = opt;
-    btn.addEventListener("click", () => {
-      setActive(opt);
-      for (const el of host.querySelectorAll(".filter-chip")) {
-        el.classList.toggle("is-active", el.textContent === opt);
+function waitForK(): Promise<K3Api> {
+  return new Promise((resolve) => {
+    const tick = (): void => {
+      const k = window.K;
+      if (k?.Chip?.init) {
+        resolve(k);
+        return;
       }
-      renderSystems(($("q") as HTMLInputElement | null)?.value ?? "");
-    });
-    host.appendChild(btn);
-  }
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
 }
 
-async function loadSystems(): Promise<void> {
-  const empty = $("systemsEmpty");
-  const summary = $("catalogSummary");
+function snack(text: string): void {
+  window.K?.Snackbar?.show?.({ text });
+}
 
-  wireFilterChips("sourceFilters", SOURCE_FILTERS, () => sourceFilter, (v) => {
-    sourceFilter = v as typeof sourceFilter;
-  });
-  wireFilterChips("familyFilters", FAMILY_FILTERS, () => familyFilter, (v) => {
-    familyFilter = v as typeof familyFilter;
-  });
+function escapeHtml(s: string): string {
+  return s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
 
-  try {
-    const res = await fetch("/data/systems.json");
-    if (!res.ok) throw new Error(String(res.status));
-    catalog = (await res.json()) as CatalogIndex;
-    if (summary) {
-      summary.textContent = `${catalog.totals.systems} systèmes · ${catalog.totals.games.toLocaleString("fr-FR")} jeux · ${catalog.totals.roms.toLocaleString("fr-FR")} roms`;
-    }
-    renderSystems(($("q") as HTMLInputElement | null)?.value ?? "");
-    if (empty) empty.hidden = catalog.systems.length > 0;
-  } catch (err) {
-    if (empty) {
-      empty.hidden = false;
-      empty.textContent = `Catalogue statique indisponible (${err instanceof Error ? err.message : err}).`;
-    }
-  }
+function shortHash(h: string | null): string {
+  if (!h) return "—";
+  return h.length > 16 ? `${h.slice(0, 8)}…${h.slice(-4)}` : h;
+}
+
+function getSearchQuery(): string {
+  const host = $("q");
+  if (!host) return "";
+  const input = host.querySelector("input") as HTMLInputElement | null;
+  return input?.value ?? "";
+}
+
+function selectedChipTexts(containerId: string): string[] {
+  const el = $(containerId);
+  if (!el || !window.K?.Chip?.getInstance) return [];
+  const inst = window.K.Chip.getInstance(el);
+  if (!inst?.getData) return [];
+  return inst
+    .getData()
+    .filter((c) => c.selected)
+    .map((c) => (c.text || c.value || "").trim())
+    .filter(Boolean);
+}
+
+function filterActive(selected: string[], all: readonly string[]): boolean {
+  return selected.length > 0 && selected.length < all.length;
 }
 
 function matchesFilters(s: SystemRow, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (sourceFilter !== "Tous" && s.source !== sourceFilter) return false;
+  const sources = selectedChipTexts("sourceFilters");
+  const families = selectedChipTexts("familyFilters");
   const family = s.family || "Autres";
-  if (familyFilter !== "Tous" && family !== familyFilter) return false;
+
+  if (filterActive(sources, SOURCE_FILTERS) && !sources.includes(s.source)) return false;
+  if (filterActive(families, FAMILY_FILTERS) && !families.includes(family)) return false;
+
+  const q = query.trim().toLowerCase();
   if (q.length === 0) return true;
   return (
     s.id.toLowerCase().includes(q) ||
@@ -106,41 +148,119 @@ function matchesFilters(s: SystemRow, query: string): boolean {
   );
 }
 
+function initFilterChips(k: K3Api): void {
+  const onSelect = (): void => {
+    visibleCount = PAGE_SIZE;
+    renderSystems(getSearchQuery());
+  };
+
+  k.Chip.init("#sourceFilters", {
+    data: SOURCE_FILTERS.map((text) => ({
+      id: text,
+      text,
+      type: "filter",
+      selected: false,
+    })),
+    onChipSelect: onSelect,
+  });
+
+  k.Chip.init("#familyFilters", {
+    data: FAMILY_FILTERS.map((text) => ({
+      id: text,
+      text,
+      type: "filter",
+      selected: false,
+    })),
+    onChipSelect: onSelect,
+  });
+}
+
+function createSystemCard(s: SystemRow): HTMLElement {
+  const family = s.family || "Autres";
+  const card = document.createElement("article");
+  card.className = "card card--outlined card--interactive";
+  if (activeSystem?.slug === s.slug) card.classList.add("is-active");
+  card.tabIndex = 0;
+  card.setAttribute("role", "button");
+  card.innerHTML = `
+    <div class="card__header">
+      <h3 class="card__title">${escapeHtml(s.id)}</h3>
+      <p class="card__subtitle">${escapeHtml(s.source)} · ${escapeHtml(family)}</p>
+    </div>
+    <div class="card__content body-medium">
+      ${s.games.toLocaleString("fr-FR")} jeux · ${s.roms.toLocaleString("fr-FR")} roms
+    </div>
+  `;
+  const open = (): void => {
+    void openSystem(s);
+  };
+  card.addEventListener("click", open);
+  card.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      open();
+    }
+  });
+  return card;
+}
+
 function renderSystems(query: string): void {
   const grid = $("systems");
+  const btnMore = $("btnMore") as HTMLButtonElement | null;
   if (!grid || !catalog) return;
+
+  filteredSystems = catalog.systems.filter((s) => matchesFilters(s, query));
+  const slice = filteredSystems.slice(0, visibleCount);
+
   grid.innerHTML = "";
-
-  const filtered = catalog.systems.filter((s) => matchesFilters(s, query));
-
-  for (const s of filtered) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "system-card" + (activeSystem?.slug === s.slug ? " is-active" : "");
-    const family = s.family || "Autres";
-    btn.innerHTML = `
-      <div class="system-card__title">${escapeHtml(s.id)}</div>
-      <div class="system-card__meta">${escapeHtml(s.source)}<span class="dot">·</span>${escapeHtml(family)}</div>
-      <div class="system-card__stats">${s.games.toLocaleString("fr-FR")} jeux · ${s.roms.toLocaleString("fr-FR")} roms</div>
-    `;
-    btn.addEventListener("click", () => void openSystem(s));
-    grid.appendChild(btn);
-  }
+  const frag = document.createDocumentFragment();
+  for (const s of slice) frag.appendChild(createSystemCard(s));
+  grid.appendChild(frag);
 
   const empty = $("systemsEmpty");
   if (empty) {
-    empty.hidden = filtered.length > 0;
-    if (filtered.length === 0) empty.textContent = "Aucun système pour ces filtres.";
+    empty.hidden = filteredSystems.length > 0;
+    if (filteredSystems.length === 0) empty.textContent = "Aucun système pour ces filtres.";
+  }
+
+  if (btnMore) {
+    btnMore.hidden = visibleCount >= filteredSystems.length;
+    btnMore.textContent = `Charger plus (${Math.min(visibleCount, filteredSystems.length)} / ${filteredSystems.length})`;
   }
 
   const summary = $("catalogSummary");
   if (summary && catalog) {
-    const games = filtered.reduce((a, s) => a + s.games, 0);
-    const roms = filtered.reduce((a, s) => a + s.roms, 0);
-    summary.textContent = `${filtered.length} / ${catalog.totals.systems} systèmes · ${games.toLocaleString("fr-FR")} jeux · ${roms.toLocaleString("fr-FR")} roms`;
+    const games = filteredSystems.reduce((a, s) => a + s.games, 0);
+    const roms = filteredSystems.reduce((a, s) => a + s.roms, 0);
+    summary.textContent = `${filteredSystems.length} / ${catalog.totals.systems} systèmes · ${games.toLocaleString("fr-FR")} jeux · ${roms.toLocaleString("fr-FR")} roms`;
   }
 
   if (activeSystem) renderRomsTable(query);
+}
+
+function showUnavailableHint(system: SystemRow, err: unknown): void {
+  const body = $("romsBody");
+  const gamesEmpty = $("gamesEmpty");
+  const count = $("gamesCount");
+  if (body) body.innerHTML = "";
+  if (count) count.textContent = "";
+
+  const reason =
+    system.source === "TOSEC"
+      ? "Les systèmes TOSEC ne sont pas exportés en JSON individuels (volume trop important)."
+      : `Impossible de charger les ROMs (${err instanceof Error ? err.message : String(err)}).`;
+
+  if (gamesEmpty) {
+    gamesEmpty.hidden = false;
+    gamesEmpty.innerHTML = `${escapeHtml(reason)} Téléchargez la base SQLite complète depuis
+      <a href="${RELEASE_URL}" target="_blank" rel="noopener noreferrer">GitHub Releases</a>.`;
+  }
+
+  snack(
+    system.source === "TOSEC"
+      ? "TOSEC : détail ROM via GitHub Releases"
+      : "Détail ROM indisponible — voir Releases",
+  );
 }
 
 async function openSystem(s: SystemRow): Promise<void> {
@@ -152,26 +272,26 @@ async function openSystem(s: SystemRow): Promise<void> {
   if (!panel || !title || !body) return;
 
   activeSystem = s;
+  activeRoms = [];
   panel.hidden = false;
   title.textContent = s.id;
-  body.innerHTML = `<tr><td colspan="7">Chargement…</td></tr>`;
-  if (gamesEmpty) gamesEmpty.hidden = true;
+  body.innerHTML = `<tr class="table__row"><td class="table__cell" colspan="7">Chargement…</td></tr>`;
+  if (gamesEmpty) {
+    gamesEmpty.hidden = true;
+    gamesEmpty.textContent = "Aucune ROM.";
+  }
   if (count) count.textContent = "";
-  renderSystems(($("q") as HTMLInputElement | null)?.value ?? "");
+  renderSystems(getSearchQuery());
 
   try {
     const res = await fetch(`/data/by-system/${encodeURIComponent(s.slug)}.json`);
     if (!res.ok) throw new Error(String(res.status));
     const data = (await res.json()) as { roms?: RomRow[] };
     activeRoms = Array.isArray(data.roms) ? data.roms : [];
-    renderRomsTable(($("q") as HTMLInputElement | null)?.value ?? "");
+    renderRomsTable(getSearchQuery());
   } catch (err) {
     activeRoms = [];
-    body.innerHTML = "";
-    if (gamesEmpty) {
-      gamesEmpty.hidden = false;
-      gamesEmpty.textContent = `Impossible de charger les ROMs (${err instanceof Error ? err.message : err}).`;
-    }
+    showUnavailableHint(s, err);
   }
 
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -199,39 +319,34 @@ function renderRomsTable(query: string): void {
   const limit = 2500;
   for (const r of rows.slice(0, limit)) {
     const tr = document.createElement("tr");
+    tr.className = "table__row";
     tr.innerHTML = `
-      <td>${escapeHtml(r.game)}</td>
-      <td>${escapeHtml(r.rom)}</td>
-      <td>${r.types.map((t) => `<span class="chip">${escapeHtml(t)}</span>`).join("")}</td>
-      <td>${escapeHtml(r.regions.join(", "))}</td>
-      <td class="mono">${escapeHtml(r.crc ?? "—")}</td>
-      <td class="mono">${escapeHtml(shortHash(r.md5))}</td>
-      <td class="mono">${escapeHtml(shortHash(r.sha1))}</td>
+      <td class="table__cell">${escapeHtml(r.game)}</td>
+      <td class="table__cell">${escapeHtml(r.rom)}</td>
+      <td class="table__cell">${r.types.map((t) => `<span class="rom-tag">${escapeHtml(t)}</span>`).join("")}</td>
+      <td class="table__cell">${escapeHtml(r.regions.join(", "))}</td>
+      <td class="table__cell mono">${escapeHtml(r.crc ?? "—")}</td>
+      <td class="table__cell mono">${escapeHtml(shortHash(r.md5))}</td>
+      <td class="table__cell mono">${escapeHtml(shortHash(r.sha1))}</td>
     `;
     body.appendChild(tr);
   }
 
   if (rows.length > limit) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="7" style="opacity:.7">… +${rows.length - limit} autres (affinez la recherche)</td>`;
+    tr.className = "table__row";
+    tr.innerHTML = `<td class="table__cell text-muted" colspan="7">… +${rows.length - limit} autres (affinez la recherche)</td>`;
     body.appendChild(tr);
   }
 
   if (count) count.textContent = `${rows.length.toLocaleString("fr-FR")} ROM(s)`;
-  if (gamesEmpty) gamesEmpty.hidden = rows.length > 0;
-}
-
-function shortHash(h: string | null): string {
-  if (!h) return "—";
-  return h.length > 16 ? `${h.slice(0, 8)}…${h.slice(-4)}` : h;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+  if (gamesEmpty && activeRoms.length > 0) {
+    gamesEmpty.hidden = rows.length > 0;
+    if (rows.length === 0) gamesEmpty.textContent = "Aucune ROM pour cette recherche.";
+  } else if (gamesEmpty && activeRoms.length === 0 && body.children.length === 0) {
+    gamesEmpty.hidden = false;
+    gamesEmpty.textContent = "Aucune ROM.";
+  }
 }
 
 async function hashFile(file: File): Promise<string> {
@@ -251,7 +366,10 @@ async function hashFile(file: File): Promise<string> {
 
 async function cryptoSubtleHex(algo: AlgorithmIdentifier, data: ArrayBuffer): Promise<string> {
   const dig = await crypto.subtle.digest(algo, data);
-  return [...new Uint8Array(dig)].map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  return [...new Uint8Array(dig)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .toUpperCase();
 }
 
 function crc32Hex(data: Uint8Array): string {
@@ -288,14 +406,72 @@ function wireDrop(): void {
   });
 }
 
-$("btnTheme")?.addEventListener("click", () => {
-  document.documentElement.classList.toggle("dark");
-});
+function toggleTheme(): void {
+  const tm = window.K?.ThemeManager;
+  if (tm?.toggle) {
+    tm.toggle();
+    return;
+  }
+  if (tm?.setTheme && typeof tm.isDark === "function") {
+    tm.setTheme(tm.isDark() ? "light" : "dark");
+    return;
+  }
+  const html = document.documentElement;
+  const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  html.setAttribute("data-theme", next);
+}
 
-$("q")?.addEventListener("input", (e) => {
-  const v = (e.target as HTMLInputElement).value;
-  renderSystems(v);
-});
+function wireUi(): void {
+  $("btnTheme")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleTheme();
+  });
 
-wireDrop();
-void loadSystems();
+  $("btnMore")?.addEventListener("click", () => {
+    visibleCount += PAGE_SIZE;
+    renderSystems(getSearchQuery());
+  });
+
+  const q = $("q");
+  q?.addEventListener("input", () => {
+    visibleCount = PAGE_SIZE;
+    renderSystems(getSearchQuery());
+  });
+  // clearable / Field may fire change
+  q?.addEventListener("change", () => {
+    visibleCount = PAGE_SIZE;
+    renderSystems(getSearchQuery());
+  });
+}
+
+async function loadSystems(): Promise<void> {
+  const empty = $("systemsEmpty");
+  const summary = $("catalogSummary");
+
+  try {
+    const res = await fetch("/data/systems.json");
+    if (!res.ok) throw new Error(String(res.status));
+    catalog = (await res.json()) as CatalogIndex;
+    if (summary) {
+      summary.textContent = `${catalog.totals.systems} systèmes · ${catalog.totals.games.toLocaleString("fr-FR")} jeux · ${catalog.totals.roms.toLocaleString("fr-FR")} roms`;
+    }
+    visibleCount = PAGE_SIZE;
+    renderSystems(getSearchQuery());
+    if (empty) empty.hidden = catalog.systems.length > 0;
+  } catch (err) {
+    if (empty) {
+      empty.hidden = false;
+      empty.textContent = `Catalogue statique indisponible (${err instanceof Error ? err.message : err}).`;
+    }
+  }
+}
+
+async function main(): Promise<void> {
+  const k = await waitForK();
+  initFilterChips(k);
+  wireUi();
+  wireDrop();
+  await loadSystems();
+}
+
+void main();

@@ -18,83 +18,102 @@
     </script>
   </head>
   <body>
-    <header class="app-bar app-bar--small">
-      <div class="app-bar-row">
-        <span class="app-bar-title">ScreenBox Catalogs</span>
-        <span class="app-bar-trailing">
-          <button type="button" id="btnTheme" class="btn btn--text btn--sm ripple">Thème</button>
-        </span>
+    <k3ui-appbar variant="small" fixed>
+      <div class="appbar__content">
+        <div class="appbar__title-section">
+          <h1 class="appbar__title">ScreenBox Catalogs</h1>
+        </div>
+        <div class="appbar__actions">
+          <a
+            class="btn btn--text btn--sm ripple"
+            href="https://github.com/Kam3leoN/ScreenBox-Catalogs/releases/latest"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Releases</a
+          >
+          <button type="button" id="btnTheme" class="btn btn--text btn--sm ripple switch-theme">
+            Thème
+          </button>
+        </div>
       </div>
-    </header>
+    </k3ui-appbar>
 
     <main class="page">
-      <section class="hero" style="margin-bottom: 1.25rem">
-        <h1 class="display-small" style="margin: 0 0 0.35rem">Catalogues SQLite</h1>
-        <p class="body-large" style="margin: 0; opacity: 0.85">
+      <section class="hero">
+        <h1 class="display-small">Catalogues SQLite</h1>
+        <p class="body-large text-muted">
           Material You 3 Expressive (K3UI) — browse public, complétion pour éditeurs.
         </p>
       </section>
 
-      <p id="catalogSummary" class="body-medium" style="opacity: 0.85; margin: 0 0 1rem">
-        Chargement du catalogue…
-      </p>
+      <p id="catalogSummary" class="body-medium text-muted">Chargement du catalogue…</p>
 
-      <div class="section-card">
-        <div class="field" style="margin-bottom: 1rem">
-          <label class="field-label" for="q">Recherche</label>
-          <input id="q" class="field-input" type="search" placeholder="Filtrer systèmes / roms…" />
-        </div>
+      <k3ui-field
+        id="q"
+        variant="outlined"
+        type="search"
+        label="Recherche"
+        clearable
+        leading-icon="magnifying-glass"
+      ></k3ui-field>
 
-        <div class="filter-block">
-          <div class="filter-label">Catalogue</div>
-          <div id="sourceFilters" class="chip-row" role="group" aria-label="Filtre catalogue"></div>
-        </div>
-        <div class="filter-block" style="margin-top: 0.85rem">
-          <div class="filter-label">Famille</div>
-          <div id="familyFilters" class="chip-row" role="group" aria-label="Filtre famille"></div>
-        </div>
+      <div class="filter-block">
+        <div class="label-medium">Catalogue</div>
+        <div id="sourceFilters" class="chips"></div>
+      </div>
+      <div class="filter-block">
+        <div class="label-medium">Famille</div>
+        <div id="familyFilters" class="chips"></div>
       </div>
 
-      <div class="section-card">
-        <h2 class="title-medium" style="margin: 0 0 0.85rem">Systèmes</h2>
-        <div id="systems" class="systems-grid"></div>
-        <p id="systemsEmpty" class="body-medium" style="opacity: 0.7" hidden>
+      <section>
+        <h2 class="title-medium">Systèmes</h2>
+        <div id="systems" class="row row--gap-adaptive"></div>
+        <p id="systemsEmpty" class="body-medium text-muted" hidden>
           Aucun système — lancez <code>npm run export:data</code> puis rebuild.
         </p>
-      </div>
-
-      <div id="gamesPanel" class="section-card" hidden>
-        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 0.85rem">
-          <h2 id="gamesTitle" class="title-medium" style="margin: 0">ROMs</h2>
-          <span id="gamesCount" class="body-small" style="opacity: 0.7"></span>
+        <div class="load-more-row">
+          <button type="button" id="btnMore" class="btn btn--tonal ripple" hidden>Charger plus</button>
         </div>
-        <div class="table-wrap">
-          <table class="roms-table" id="romsTable">
-            <thead>
-              <tr>
-                <th>Jeu</th>
-                <th>ROM</th>
-                <th>Type</th>
-                <th>Région</th>
-                <th>CRC</th>
-                <th>MD5</th>
-                <th>SHA1</th>
-              </tr>
-            </thead>
-            <tbody id="romsBody"></tbody>
-          </table>
-        </div>
-        <p id="gamesEmpty" class="body-medium" style="opacity: 0.7; margin-top: 0.75rem" hidden>Aucune ROM.</p>
-      </div>
+      </section>
 
-      <div class="section-card">
-        <h2 class="title-medium" style="margin: 0 0 0.5rem">Complétion</h2>
-        <p class="body-medium" style="margin: 0 0 0.85rem; opacity: 0.85">
+      <section id="gamesPanel" hidden>
+        <div class="row row--gap-adaptive" style="align-items: baseline; justify-content: space-between">
+          <h2 id="gamesTitle" class="title-medium">ROMs</h2>
+          <span id="gamesCount" class="body-small text-muted"></span>
+        </div>
+        <div class="table-wrapper">
+          <div class="table-container">
+            <table
+              class="table table--hoverable table--sticky-header table--compact"
+              id="romsTable"
+            >
+              <thead>
+                <tr>
+                  <th class="table__header">Jeu</th>
+                  <th class="table__header">ROM</th>
+                  <th class="table__header">Type</th>
+                  <th class="table__header">Région</th>
+                  <th class="table__header">CRC</th>
+                  <th class="table__header">MD5</th>
+                  <th class="table__header">SHA1</th>
+                </tr>
+              </thead>
+              <tbody id="romsBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <p id="gamesEmpty" class="body-medium text-muted" hidden>Aucune ROM.</p>
+      </section>
+
+      <section>
+        <h2 class="title-medium">Complétion</h2>
+        <p class="body-medium text-muted">
           Déposez un fichier pour calculer size / CRC / MD5 / SHA1 (client).
         </p>
-        <div id="drop" class="dropzone">Glisser-déposer un ROM ici</div>
-        <pre id="hashOut" class="hash-out"></pre>
-      </div>
+        <div id="drop" class="upload-zone">Glisser-déposer un ROM ici</div>
+        <pre id="hashOut" class="mono"></pre>
+      </section>
     </main>
 
     <script type="module" src="/k3ui/k3ui.min.js"></script>
