@@ -422,13 +422,12 @@ button.chip.is-active:hover:not(:disabled),
   color: var(--text-primary);
 }
 
-/* --- ROMs table (hors card, pleine largeur) --- */
+/* --- ROMs table (dans le container, hors card) --- */
 .roms-section--full {
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  padding: 0 clamp(0.75rem, 2vw, 1.5rem);
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
   background: transparent;
   border: none;
   border-radius: 0;
