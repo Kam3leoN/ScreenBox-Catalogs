@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import initSqlJs from "sql.js";
+import { count1g1r } from "../lib/one-g1r.mjs";
 import { loadTursoEnv } from "./turso-env.mjs";
 import { pullTursoIntoSqlJs } from "./turso-pull.mjs";
 
@@ -34,6 +35,11 @@ function resolveSourceMode() {
 }
 
 const indexOnly = process.argv.includes("--index-only");
+/**
+ * Site Vercel : by-system hors TOSEC (ROMs complets) + TOSEC Consoles/Portables
+ * jouables en mode games-only (liste légère, sans hashes par piste).
+ */
+const siteExport = process.argv.includes("--site");
 
 function slugify(id) {
   return id
@@ -41,6 +47,22 @@ function slugify(id) {
     .replace(/[<>:"/\\|?*]/g, "_")
     .replace(/\s+/g, " ")
     .slice(0, 180);
+}
+
+/** Bruit TOSEC (pas de browse site). */
+function isTosecNoiseId(id) {
+  return /Artwork|Manuals?|Magazines?|Firmware|Applications?|Samplers?|Catalogs?|Multimedia|Bonus|Coverdisk/i.test(
+    id,
+  );
+}
+
+/** TOSEC jouable : Games / Homebrew Games|Demos / Demos. */
+function isTosecPlayableBrowse(id) {
+  if (isTosecNoiseId(id)) return false;
+  if (/\bHomebrew\b/i.test(id) && /\b(Games|Demos)\b/i.test(id)) return true;
+  if (/(?:^| - )Games(?:$| - )/i.test(id)) return true;
+  if (/(?:^| - )Demos(?:$| - )/i.test(id)) return true;
+  return false;
 }
 
 function normalizeSource(source) {
@@ -176,20 +198,52 @@ const systemsRs = db.exec(`
 const cols = systemsRs[0]?.columns ?? [];
 const rows = systemsRs[0]?.values ?? [];
 const familyMap = loadFamilyMap();
-const systems = rows.map((row) => {
-  const o = Object.fromEntries(cols.map((c, i) => [c, row[i]]));
-  const id = String(o.id);
-  const source = normalizeSource(String(o.source ?? ""));
-  return {
-    id,
-    source,
-    family: resolveFamily(id, familyMap),
-    version: o.version == null ? null : String(o.version),
-    games: Number(o.games ?? 0),
-    roms: Number(o.roms ?? 0),
-    slug: slugify(id),
-  };
-});
+/** Doublons catalogue : même DAT exposé sous un second id (à ignorer). */
+const EXCLUDED_SYSTEM_IDS = new Set(["Sega - Mega Drive"]);
+
+console.log("[export-static-data] calcul 1G1R…");
+const namesBySystem = new Map();
+const namesRs = db.exec(`
+  SELECT g.system_id,
+         COALESCE(
+           (SELECT name FROM game_regions gr
+            WHERE gr.game_id = g.id
+            ORDER BY CASE gr.region
+              WHEN 'europe' THEN 0 WHEN 'world' THEN 1 WHEN 'usa' THEN 2 WHEN 'japan' THEN 3 ELSE 9 END
+            LIMIT 1),
+           '(game)'
+         ) AS name
+  FROM games g
+`);
+for (const [systemId, name] of namesRs[0]?.values ?? []) {
+  const id = String(systemId);
+  let list = namesBySystem.get(id);
+  if (!list) {
+    list = [];
+    namesBySystem.set(id, list);
+  }
+  list.push(String(name ?? ""));
+}
+
+const systems = rows
+  .map((row) => {
+    const o = Object.fromEntries(cols.map((c, i) => [c, row[i]]));
+    const id = String(o.id);
+    const source = normalizeSource(String(o.source ?? ""));
+    const games = Number(o.games ?? 0);
+    const names = namesBySystem.get(id) ?? [];
+    return {
+      id,
+      source,
+      family: resolveFamily(id, familyMap),
+      version: o.version == null ? null : String(o.version),
+      games,
+      games1g1r: names.length > 0 ? count1g1r(names) : 0,
+      roms: Number(o.roms ?? 0),
+      slug: slugify(id),
+    };
+  })
+  .filter((s) => !EXCLUDED_SYSTEM_IDS.has(s.id));
 
 const metaRs = db.exec(`SELECT key, value FROM catalog_meta`);
 const meta = {};
@@ -211,7 +265,7 @@ const index = {
 
 fs.writeFileSync(path.join(outDir, "systems.json"), JSON.stringify(index));
 
-if (indexOnly) {
+if (indexOnly && !siteExport) {
   console.log(
     `[export-static-data] OK (index-only) → ${systems.length} systèmes, ${index.totals.games} jeux, ${index.totals.roms} roms`,
   );
@@ -219,8 +273,69 @@ if (indexOnly) {
   process.exit(0);
 }
 
+const systemsForBySystem = siteExport
+  ? systems.filter((s) => {
+      if (s.source !== "TOSEC") return true;
+      if (!isTosecPlayableBrowse(s.id)) return false;
+      const fam = s.family || "Autres";
+      return fam === "Consoles" || fam === "Portables";
+    })
+  : systems;
+
 let exported = 0;
-for (const s of systems) {
+let exportedGamesOnly = 0;
+for (const s of systemsForBySystem) {
+  const gamesOnly = siteExport && s.source === "TOSEC";
+
+  if (gamesOnly) {
+    const stmt = db.prepare(`
+      SELECT g.id AS game_id,
+             (SELECT name FROM game_regions gr
+              WHERE gr.game_id = g.id
+              ORDER BY CASE gr.region
+                WHEN 'europe' THEN 0 WHEN 'world' THEN 1 WHEN 'usa' THEN 2 WHEN 'japan' THEN 3 ELSE 9 END
+              LIMIT 1) AS name,
+             (SELECT group_concat(type, ',') FROM game_types gt WHERE gt.game_id = g.id) AS types,
+             (SELECT group_concat(region, ',') FROM game_regions gr2 WHERE gr2.game_id = g.id) AS regions,
+             (SELECT COUNT(*) FROM roms r WHERE r.game_id = g.id) AS rom_count
+      FROM games g
+      WHERE g.system_id = ?
+      ORDER BY name COLLATE NOCASE
+    `);
+    stmt.bind([s.id]);
+    const games = [];
+    const roms = [];
+    while (stmt.step()) {
+      const r = stmt.getAsObject();
+      const gameId = Number(r.game_id);
+      const gameName = r.name == null ? `(game #${gameId})` : String(r.name);
+      const types = r.types ? String(r.types).split(",") : [];
+      const regions = r.regions ? String(r.regions).split(",") : [];
+      const romCount = Number(r.rom_count ?? 0);
+      games.push({ id: gameId, name: gameName, types, regions, roms: romCount });
+      // Une ligne « jeu » pour le tableau site (pas chaque piste BIN/ISO).
+      roms.push({
+        gameId,
+        game: gameName,
+        rom: romCount <= 1 ? `${romCount} fichier` : `${romCount} fichiers`,
+        types,
+        regions,
+        size: null,
+        crc: null,
+        md5: null,
+        sha1: null,
+      });
+    }
+    stmt.free();
+    fs.writeFileSync(
+      path.join(bySystemDir, `${s.slug}.json`),
+      JSON.stringify({ id: s.id, source: s.source, mode: "games", games, roms }),
+    );
+    exported++;
+    exportedGamesOnly++;
+    continue;
+  }
+
   const stmt = db.prepare(`
     SELECT g.id AS game_id,
            (SELECT name FROM game_regions gr
@@ -280,6 +395,7 @@ for (const s of systems) {
     JSON.stringify({
       id: s.id,
       source: s.source,
+      mode: "roms",
       games: [...gamesMap.values()],
       roms,
     }),
@@ -288,6 +404,8 @@ for (const s of systems) {
 }
 
 db.close();
+const mode = siteExport ? "site" : "full";
+const gamesOnlyHint = exportedGamesOnly > 0 ? `, ${exportedGamesOnly} TOSEC games-only` : "";
 console.log(
-  `[export-static-data] OK → ${systems.length} systèmes, ${index.totals.games} jeux, ${index.totals.roms} roms (${exported} fichiers)`,
+  `[export-static-data] OK (${mode}) → ${systems.length} systèmes, ${index.totals.games} jeux, ${index.totals.roms} roms (${exported} by-system${gamesOnlyHint})`,
 );

@@ -8,15 +8,15 @@
     "export:data:local": "node scripts/export-static-data.mjs --local",
     "export:data:turso": "node scripts/export-static-data.mjs --turso",
     "export:data:index": "node scripts/export-static-data.mjs --local --index-only",
+    "export:data:site": "node scripts/export-static-data.mjs --local --site",
     "export:db": "node scripts/export-db-from-turso.mjs",
     "seed:turso": "node -e \"console.error('Turso retired for full catalogs — use GitHub Releases (see README)'); process.exit(1)\"",
     "seed:turso:legacy": "node scripts/seed-turso.mjs",
-    "predev": "npm run export:data:index",
+    "predev": "npm run export:data:site",
     "dev": "vite",
-    "prebuild": "npm run export:data:index",
+    "prebuild": "npm run export:data:site",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "sync:k3ui": "node scripts/sync-k3ui.mjs"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@libsql/client": "^0.15.15"

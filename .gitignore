@@ -12,6 +12,3 @@ web/dist/
 !.env.example
 
 .vercel
-
-screenbox-catalogs.db
-

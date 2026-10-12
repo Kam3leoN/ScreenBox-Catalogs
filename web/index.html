@@ -3,120 +3,130 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ScreenBox Catalogs</title>
-    <link rel="stylesheet" href="/k3ui/k3ui.min.css" />
-    <script>
-      window.K3UI_OPTIONS = {
-        DynamicColorManager: {
-          sourceColor: "#0099FF",
-          specVersion: "2025",
-          variant: 2,
-          contrastLevel: 0,
-          platform: "phone",
-        },
-      };
-    </script>
+    <title>ScreenBox 1G1R Catalogs</title>
   </head>
-  <body>
-    <k3ui-appbar variant="small" fixed>
-      <div class="appbar__content">
-        <div class="appbar__title-section">
-          <h1 class="appbar__title">ScreenBox Catalogs</h1>
-        </div>
-        <div class="appbar__actions">
-          <a
-            class="btn btn--text btn--sm ripple"
-            href="https://github.com/Kam3leoN/ScreenBox-Catalogs/releases/latest"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Releases</a
-          >
-          <button type="button" id="btnTheme" class="btn btn--text btn--sm ripple switch-theme">
-            Thème
-          </button>
-        </div>
-      </div>
-    </k3ui-appbar>
+  <body class="search-body">
+    <nav class="nav">
+      <a href="/" class="nav-active">Catalogs</a>
+      <a
+        href="https://github.com/Kam3leoN/ScreenBox-Catalogs/releases/latest"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Releases</a
+      >
+      <a href="https://github.com/Kam3leoN/ScreenBox" target="_blank" rel="noopener noreferrer"
+        >ScreenBox</a
+      >
+    </nav>
 
-    <main class="catalog-page">
-      <section class="hero">
-        <h1 class="display-small">Catalogues SQLite</h1>
-        <p class="body-large text-muted">
-          Material You 3 Expressive (K3UI) — browse public, complétion pour éditeurs.
+    <main class="container catalog-page">
+      <header class="search-header header">
+        <h1 class="title">ScreenBox <span class="title-1g1r">1G1R</span> Catalogs</h1>
+        <p class="subtitle search-subtitle">
+          Packs DAT 1G1R — browse public, complétion hash pour éditeurs.
+        </p>
+        <p id="catalogSummary" class="tagline">Chargement du catalogue…</p>
+      </header>
+
+      <section class="panel filters-panel">
+        <div class="select-row">
+          <label class="select-field">
+            <span class="filter-label">Manufacturer</span>
+            <select id="manufacturerSelect" class="filter-select" aria-label="Manufacturer">
+              <option value="">Tous</option>
+            </select>
+          </label>
+          <label class="select-field">
+            <span class="filter-label">Hardware</span>
+            <select id="hardwareSelect" class="filter-select" aria-label="Hardware">
+              <option value="">Tous</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="input-wrapper">
+          <input
+            id="q"
+            class="search-input"
+            type="search"
+            placeholder="Recherche systèmes / jeux / hash…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+
+        <div class="filter-block">
+          <div class="filter-label">Famille</div>
+          <div id="familyFilters" class="chip-group" role="group" aria-label="Famille"></div>
+        </div>
+        <div class="filter-block">
+          <div class="filter-label">Contenu</div>
+          <div id="contentFilters" class="chip-group" role="group" aria-label="Contenu"></div>
+        </div>
+        <div class="filter-block">
+          <div class="filter-label">Type</div>
+          <div id="kindFilters" class="chip-group" role="group" aria-label="Type"></div>
+        </div>
+        <p class="hint" id="contentHint">
+          Vue 1G1R : 1 titre logique, meilleure dump (EU/PAL → US → JP, préfère [!]). Contenu Jeux
+          masque firmware/magazines… BIN/ISO fusionnés.
         </p>
       </section>
 
-      <p id="catalogSummary" class="body-medium text-muted">Chargement du catalogue…</p>
-
-      <k3ui-field
-        id="q"
-        variant="outlined"
-        type="search"
-        label="Recherche"
-        clearable
-        leading-icon="magnifying-glass"
-      ></k3ui-field>
-
-      <div class="filter-block">
-        <div class="label-medium">Catalogue</div>
-        <div id="sourceFilters" class="chips"></div>
-      </div>
-      <div class="filter-block">
-        <div class="label-medium">Famille</div>
-        <div id="familyFilters" class="chips"></div>
-      </div>
-
-      <section>
-        <h2 class="title-medium">Systèmes</h2>
-        <div id="systems" class="row row--gap-adaptive"></div>
-        <p id="systemsEmpty" class="body-medium text-muted" hidden>
-          Aucun système — lancez <code>npm run export:data</code> puis rebuild.
-        </p>
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Systèmes</h2>
+          <span class="panel-meta" id="systemsSubtitle"></span>
+        </div>
+        <div id="systems" class="systems-grid"></div>
+        <p id="systemsEmpty" class="empty-msg" hidden>Aucun système pour ces filtres.</p>
         <div class="load-more-row">
-          <button type="button" id="btnMore" class="btn btn--tonal ripple" hidden>Charger plus</button>
+          <button type="button" id="btnMore" class="btn-primary" hidden>Charger plus</button>
         </div>
       </section>
 
-      <section id="gamesPanel" hidden>
-        <div class="row row--gap-adaptive" style="align-items: baseline; justify-content: space-between">
-          <h2 id="gamesTitle" class="title-medium">ROMs</h2>
-          <span id="gamesCount" class="body-small text-muted"></span>
+      <section class="panel roms-section" id="gamesPanel">
+        <div class="panel-header">
+          <h2 class="panel-title" id="gamesTitle">Détail</h2>
+          <span class="panel-meta" id="gamesCount">Sélectionnez un système pour afficher le détail.</span>
         </div>
-        <div class="table-wrapper">
-          <div class="table-container">
-            <table
-              class="table table--hoverable table--sticky-header table--compact"
-              id="romsTable"
-            >
-              <thead>
-                <tr>
-                  <th class="table__header">Jeu</th>
-                  <th class="table__header">ROM</th>
-                  <th class="table__header">Type</th>
-                  <th class="table__header">Région</th>
-                  <th class="table__header">CRC</th>
-                  <th class="table__header">MD5</th>
-                  <th class="table__header">SHA1</th>
-                </tr>
-              </thead>
-              <tbody id="romsBody"></tbody>
-            </table>
-          </div>
+        <div id="romsAlpha" class="roms-alpha" hidden></div>
+        <div class="metadata" id="romsWrap" hidden>
+          <table id="romsTable">
+            <thead>
+              <tr>
+                <th>Jeu</th>
+                <th id="romColHeader">ROM</th>
+                <th>Type</th>
+                <th>Région</th>
+                <th>CRC</th>
+                <th>MD5</th>
+                <th>SHA1</th>
+              </tr>
+            </thead>
+            <tbody id="romsBody"></tbody>
+          </table>
         </div>
-        <p id="gamesEmpty" class="body-medium text-muted" hidden>Aucune ROM.</p>
+        <p id="gamesEmpty" class="empty-msg">Sélectionnez un système pour afficher le détail.</p>
+        <div class="pagination roms-pager" id="romsPager" hidden>
+          <button type="button" id="romsPrev" class="btn-primary">Précédent</button>
+          <span id="romsPageLabel" class="tagline"></span>
+          <button type="button" id="romsNext" class="btn-primary">Suivant</button>
+        </div>
       </section>
 
-      <section>
-        <h2 class="title-medium">Complétion</h2>
-        <p class="body-medium text-muted">
-          Déposez un fichier pour calculer size / CRC / MD5 / SHA1 (client).
-        </p>
-        <div id="drop" class="upload-zone">Glisser-déposer un ROM ici</div>
+      <section class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Complétion</h2>
+          <span class="panel-meta">size / CRC / MD5 / SHA1 (client)</span>
+        </div>
+        <div id="drop" class="upload-zone" tabindex="0" role="button">
+          Glisser-déposer un ROM ici — ou cliquer pour choisir
+        </div>
         <pre id="hashOut" class="mono"></pre>
       </section>
     </main>
 
-    <script type="module" src="/k3ui/k3ui.min.js"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

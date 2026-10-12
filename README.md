@@ -23,7 +23,7 @@ DATs locaux → ConvertDatsToCatalogDb → screenbox-catalogs.db
 
 | Chemin | Rôle |
 |---|---|
-| `web/` | Site Vercel — K3UI + index `public/data/systems.json` |
+| `web/` | Site Vercel — UI style Minerva + index `public/data/systems.json` |
 | `tools/CatalogEditor/` | Éditeur desktop CRUD (fichier → hash) |
 | `.github/workflows/publish-release.yml` | Aide publication Release |
 | `screenbox-catalogs.db` | **Non versionné** — publié en Release uniquement |
@@ -47,7 +47,7 @@ npm run export:data:index   # systems.json depuis le .db local
 npm run build
 ```
 
-- Sync K3UI : `npm run sync:k3ui`
+- Style : JetBrains Mono + palette Minerva Archive (`#9f7aea` / `#0f0f12`)
 - Root Vercel : `web/`
 
 ## Publier une Release (machine locale)
