@@ -429,7 +429,7 @@ button.chip.is-active:hover:not(:disabled),
 .panel--flush-x {
   padding-left: 0;
   padding-right: 0;
-  overflow: hidden;
+  /* pas d’overflow:hidden — casse le thead sticky */
 }
 
 .panel--flush-x > .panel-header,
