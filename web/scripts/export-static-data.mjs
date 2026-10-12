@@ -285,7 +285,9 @@ const systemsForBySystem = siteExport
 let exported = 0;
 let exportedGamesOnly = 0;
 for (const s of systemsForBySystem) {
-  const gamesOnly = siteExport && s.source === "TOSEC";
+  // Site Vercel : mode games (liste légère) pour toutes les sources — les hashes
+  // complets restent dans la Release SQLite / Desk.
+  const gamesOnly = siteExport;
 
   if (gamesOnly) {
     const stmt = db.prepare(`

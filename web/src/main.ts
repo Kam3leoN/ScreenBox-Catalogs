@@ -531,7 +531,22 @@ function showUnavailableHint(system: SystemRow, err: unknown): void {
   if (gamesEmpty) {
     gamesEmpty.hidden = false;
     gamesEmpty.innerHTML = `${escapeHtml(reason)} Téléchargez
-      <a href="${RELEASE_URL}" target="_blank" rel="noopener noreferrer">GitHub Releases</a>.`;
+      <a href="${RELEASE_URL}" target="_blank" rel="noopener noreferrer">GitHub Releases</a>
+      pour la base SQLite complète (hashes).`;
+  }
+
+  // Pager / table : forcer masquage (évite résidu UI après un 404)
+  if (pager) {
+    pager.hidden = true;
+    pager.setAttribute("hidden", "");
+  }
+  if (wrap) {
+    wrap.hidden = true;
+    wrap.setAttribute("hidden", "");
+  }
+  if (alpha) {
+    alpha.hidden = true;
+    alpha.setAttribute("hidden", "");
   }
 
   snack(system.source === "TOSEC" ? "TOSEC : voir GitHub Releases" : "Détail indisponible");

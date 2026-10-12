@@ -2,7 +2,8 @@
 .env
 .env.*
 !.env.example
-# Détail par système (trop volumineux) — régénéré en local via export:data
-public/data/by-system/
-# systems.json est versionné (index catalogue, y compris TOSEC)
+# by-system versionné en mode --site (games only) pour le browse Vercel.
+# Régénérer : npm run export:data:site
+# systems.json est versionné (index catalogue)
 !public/data/systems.json
+!public/data/by-system/
