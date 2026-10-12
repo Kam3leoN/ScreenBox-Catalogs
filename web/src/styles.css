@@ -425,31 +425,28 @@ button.chip.is-active:hover:not(:disabled),
   color: var(--text-primary);
 }
 
-/* --- ROMs table (dans le container, hors card) --- */
-.roms-section--full {
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
+/* --- ROMs : card sans padding latéral (index + table pleine largeur) --- */
+.panel--flush-x {
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+}
+
+.panel--flush-x > .panel-header,
+.panel--flush-x > .roms-section__header,
+.panel--flush-x > .empty-msg,
+.panel--flush-x > .roms-pager {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
 .roms-section__header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 0.85rem;
 }
 
 .roms-table-wrap {
   width: 100%;
-  /* overflow-x:auto ici empêche sticky vs viewport — scroll H géré par la page */
+  /* pas d’overflow-x:auto : sticky thead vs viewport */
   overflow: visible;
   background: transparent;
   border-radius: 0;
@@ -556,18 +553,16 @@ button.chip.is-active:hover:not(:disabled),
   text-align: left;
 }
 
-/* --- Alpha pager : une ligne si possible, bouton vertical (lettre / chiffre) --- */
+/* --- Alpha pager : 2 lignes, bouton vertical (lettre / chiffre) --- */
 .roms-alpha {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  align-items: stretch;
-  gap: 0.2rem;
-  margin: 0 0 0.65rem;
+  display: grid;
+  /* Tous + A–Z + # = 28 → 14 × 2 lignes */
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0 0 0.85rem;
   width: 100%;
-  overflow-x: auto;
-  padding-bottom: 0.15rem;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
 }
 
 button.roms-alpha__btn,
@@ -576,42 +571,33 @@ button.roms-alpha__btn,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
-  flex: 1 1 0;
-  min-width: 1.55rem;
-  max-width: 2.4rem;
-  width: auto;
-  padding: 0.22rem 0.12rem;
-  font-size: 0.68rem;
+  gap: 0.12rem;
+  min-width: 0;
+  width: 100%;
+  padding: 0.4rem 0.15rem;
+  font-size: 0.85rem;
   font-family: inherit;
-  line-height: 1.05;
+  line-height: 1.1;
   background-color: var(--bg-dark);
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
-  border-left: 2px solid var(--border-subtle);
+  border-left: 3px solid var(--border-subtle);
   box-shadow: none;
-  border-radius: 0.25rem;
+  border-radius: 0.3rem;
   cursor: pointer;
   transform: none;
   text-align: center;
 }
 
-/* « Tous » un peu plus large que A–Z */
-button.roms-alpha__btn:first-child,
-.roms-alpha__btn:first-child {
-  flex: 1.35 1 0;
-  min-width: 2.1rem;
-  max-width: 3rem;
-}
-
 .roms-alpha__letter {
   font-weight: 400;
   color: inherit;
+  font-size: 0.9rem;
 }
 
 .roms-alpha__count {
   color: var(--text-muted);
-  font-size: 0.58rem;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 
