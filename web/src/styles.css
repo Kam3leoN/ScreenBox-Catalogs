@@ -422,16 +422,88 @@ button.chip.is-active:hover:not(:disabled),
   color: var(--text-primary);
 }
 
-/* --- ROMs table --- */
-.roms-section .metadata {
-  margin-top: 0.5rem;
-  overflow-x: auto;
+/* --- ROMs table (hors card, pleine largeur) --- */
+.roms-section--full {
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding: 0 clamp(0.75rem, 2vw, 1.5rem);
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
+.roms-section__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.roms-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  background: transparent;
+  border-radius: 0;
+}
+
+.roms-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--text-primary);
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.roms-table thead th {
+  background: var(--bg-dark);
+  color: var(--accent-light);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.7rem 0.75rem;
+  position: sticky;
+  top: 4.25rem;
+  z-index: 20;
+  border-bottom: 1px solid var(--accent);
+  white-space: nowrap;
+  box-shadow: 0 1px 0 var(--bg-dark);
+}
+
+.roms-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.82rem;
+  user-select: text;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.roms-table td:first-child,
+.roms-table td:nth-child(2) {
+  white-space: normal;
+  word-break: break-word;
+  min-width: 12rem;
+  max-width: 28rem;
+}
+
+.roms-table tbody tr:hover td {
+  background-color: var(--accent-hover);
+}
+
+/* legacy metadata (si réutilisé ailleurs) */
 .metadata {
   background-color: var(--bg-dark);
   border-radius: 0.5rem;
-  overflow: clip;
 }
 
 .metadata table {
@@ -450,9 +522,6 @@ button.chip.is-active:hover:not(:disabled),
   letter-spacing: 0.05em;
   text-transform: uppercase;
   padding: 0.65rem 0.85rem;
-  position: sticky;
-  top: 4.5rem;
-  z-index: 5;
 }
 
 .metadata td {
@@ -461,14 +530,6 @@ button.chip.is-active:hover:not(:disabled),
   word-break: break-all;
   font-size: 0.82rem;
   user-select: text;
-}
-
-.metadata tr:last-child td {
-  border-bottom: none;
-}
-
-.metadata tbody tr:hover td {
-  background-color: var(--accent-hover);
 }
 
 .rom-tag {
@@ -680,8 +741,8 @@ button.roms-alpha__btn.is-active:hover:not(:disabled),
     grid-template-columns: 1fr;
   }
 
-  .metadata th {
-    top: 4rem;
+  .roms-table thead th {
+    top: 5.25rem;
   }
 
   .roms-pager {
